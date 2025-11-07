@@ -1,65 +1,26 @@
-﻿name: Build and Release APK
+﻿name: Quick APK Build
 
 on:
   push:
-    branches: [ main ]
-    tags: [ 'v*' ]
-  pull_request:
     branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '11'
-
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
+    - uses: actions/checkout@v4
+    
+    - uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.16.0'
-        channel: 'stable'
-
-    - name: Install dependencies
-      run: flutter pub get
-
-    - name: Run tests
-      run: flutter test || echo \"Tests failed but continuing build\"
-
-    - name: Check code format
-      run: flutter format --set-exit-if-changed . || echo \"Format issues found\"
-
-    - name: Analyze code
-      run: flutter analyze || echo \"Analysis issues found\"
-
-    - name: Build APK
-      run: flutter build apk --release --no-tree-shake-icons
-
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v4
+    
+    - run: flutter pub get
+    
+    - run: flutter build apk --release
+    
+    - uses: actions/upload-artifact@v4
       with:
-        name: terminal-universal-apk
+        name: app-apk
         path: build/app/outputs/flutter-apk/app-release.apk
-        retention-days: 30
-
-    - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/v')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: build/app/outputs/flutter-apk/app-release.apk
-        body: |
-          🚀 Terminal Universal
-          
-          **Modo Real:** Conecta a dispositivos físicos via BLE
-          **Modo Simulado:** Teste sem riscos com dados simulados
-          
-          ⚠️ **Atenção:** Modo Real pode causar alterações permanentes
-        draft: false
-        prerelease: false
